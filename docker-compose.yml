@@ -33,6 +33,8 @@ services:
       REDIS_URL: redis://redis:6379/0
       JWT_SECRET: ${JWT_SECRET:-local-ordinal-fibers-change-this-before-hosting}
       SEED_DEMO: ${SEED_DEMO:-true}
+      WORKER_CONCURRENCY: ${WORKER_CONCURRENCY:-3}
+      RUN_LEASE_SECONDS: ${RUN_LEASE_SECONDS:-30}
       OMP_NUM_THREADS: 1
       OPENBLAS_NUM_THREADS: 1
     ports: ["${BACKEND_PORT:-19231}:8000"]

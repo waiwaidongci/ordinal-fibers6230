@@ -1,4 +1,5 @@
 from datetime import datetime
+from typing import Optional
 from sqlalchemy import String,ForeignKey,UniqueConstraint,DateTime,JSON
 from sqlalchemy.dialects.mysql import DOUBLE
 from sqlalchemy.orm import Mapped,mapped_column
@@ -13,4 +14,7 @@ class RankTestRun(Base):
     snapshot:Mapped[dict]=mapped_column(JSON,default=dict)
     result:Mapped[dict]=mapped_column(JSON,default=dict)
     error:Mapped[str]=mapped_column(String(600),default='')
+    claim_token:Mapped[str]=mapped_column(String(64),default='')
+    claimed_at:Mapped[Optional[datetime]]=mapped_column(DateTime,nullable=True,default=None)
+    worker_id:Mapped[str]=mapped_column(String(80),default='')
     created_at:Mapped[datetime]=mapped_column(DateTime,default=datetime.utcnow)

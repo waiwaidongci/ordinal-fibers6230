@@ -62,10 +62,12 @@ Compose恰好5服务、健康依赖、数据库/Redis/共享artifacts命名卷�
 | DB_PASSWORD | ordinal-demo-local，仅本地示例 |
 | JWT_SECRET | 本地示例，部署前用独立随机键 |
 | SEED_DEMO | true，启动补齐缺失seed |
+| WORKER_CONCURRENCY | 3，单worker并发认领计算的路数 |
+| RUN_LEASE_SECONDS | 30，任务认领租约秒数；心跳续约，过期由其他路接手 |
 | DATABASE_URL/REDIS_URL | Compose内部地址，本地可覆盖 |
 | OMP_NUM_THREADS/OPENBLAS_NUM_THREADS | 1，数值线程限制 |
 
-JWT8小时，PBKDF2-SHA256存储密码。角色授权、审计、统一错误与Redis每IP每分钟30次登录限流。验证失败仅输出loc/msg，不回显NaN/Inf非法输入造成JSON编码500。单研究2–5工艺，每组至少5份、总计≤2000份；活动任务最多3项。数据库是任务状态权威，Redis唤醒失败仍扫描；单worker中断任务按冻结快照重算。
+JWT8小时，PBKDF2-SHA256存储密码。角色授权、审计、统一错误与Redis每IP每分钟30次登录限流。验证失败仅输出loc/msg，不回显NaN/Inf非法输入造成JSON编码500。单研究2–5工艺，每组至少5份、总计≤2000份；活动任务最多3项。数据库是任务状态权威，Redis唤醒失败仍扫描。worker按WORKER_CONCURRENCY多路并发：条件更新原子认领，同一任务仅一路认领成功；认领携带令牌与租约，心跳续约，中断后租约过期由其他路自动接手、按冻结快照重算；提交按认领令牌围栏，被接手后的迟到计算不能覆盖正式结果或失败状态；留档先写临时文件fsync再原子rename，崩溃不露出半成品，恢复后页面、留档文件与批准复检CSV对应同一冻结输入。
 
 ## 公式与解释
 
@@ -104,4 +106,4 @@ npm ci
 npm run dev -- --port 18231
 ```
 
-本地worker需可写/artifacts，推荐Compose共享卷。初始DDL供审阅，metadata.create_all只建缺表，没有生产版本升级器。字体Google Fonts Barlow/Noto Serif SC，离线回退Georgia/serif。真实测试、截图和已知差异在批次独立test-artifacts/gb-0027；收尾docker compose down -v --remove-orphans会删本题数据库/Redis/结果卷。MIT License。
+本地worker需可写/artifacts，推荐Compose共享卷。初始DDL供审阅，metadata.create_all只建缺表，没有生产版本升级器；既有数据卷升级执行migrations/002_run_claims.sql或重建数据卷。并发认领/接手围栏/写文件后中断恢复验证：`python -m scripts.verify_run_concurrency`，默认用临时SQLite与临时留档目录，不触碰真实库；TEST_DATABASE_URL可指向MySQL复验。字体Google Fonts Barlow/Noto Serif SC，离线回退Georgia/serif。真实测试、截图和已知差异在批次独立test-artifacts/gb-0027；收尾docker compose down -v --remove-orphans会删本题数据库/Redis/结果卷。MIT License。
